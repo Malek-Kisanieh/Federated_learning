@@ -42,6 +42,7 @@ strategy = "FedAvg"
 attacker-ids = "none"
 attack-type = "label_flipping"
 proximal-mu = 0.1
+loss-threshold-percentile = 75
 
 # Default federation to use when running the app
 [tool.flwr.federations]

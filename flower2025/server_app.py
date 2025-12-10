@@ -51,7 +51,8 @@ def main(grid: Grid, context: Context) -> None:
     arrays = ArrayRecord(global_model.state_dict())
 
     # Load centralized test data for server-side evaluation
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # Force CPU due to GPU compatibility issues in WSL
+    device = torch.device("cpu")
     _, testloader = load_data(partition_id=0, num_partitions=10, use_iid=use_iid)
 
     # Define server-side evaluation function

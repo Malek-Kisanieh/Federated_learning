@@ -6,6 +6,7 @@ Compare baseline, attacked, and defended models
 import subprocess
 from pathlib import Path
 import json
+import shutil
 
 
 def run_defense_experiment(use_iid=True, num_attackers=0, attacker_ids=None):
@@ -25,6 +26,19 @@ def run_defense_experiment(use_iid=True, num_attackers=0, attacker_ids=None):
     print(f"Data: {data_dist}, Attackers: {num_attackers}")
     print(f"{'='*80}\n")
     
+    # Copy defense config to pyproject.toml
+    project_dir = Path(__file__).parent
+    pyproject_path = project_dir / "pyproject.toml"
+    pyproject_defense_path = project_dir / "pyproject_defense.toml"
+    
+    # Backup original
+    pyproject_backup = project_dir / "pyproject.toml.backup"
+    if pyproject_path.exists():
+        shutil.copy(pyproject_path, pyproject_backup)
+    
+    # Copy defense config
+    shutil.copy(pyproject_defense_path, pyproject_path)
+    
     # Build config string with defense parameters
     config_parts = [
         "num-server-rounds=50",
@@ -43,24 +57,24 @@ def run_defense_experiment(use_iid=True, num_attackers=0, attacker_ids=None):
         config_string,
     ]
     
-    # Override to use defense server app
-    # We need to temporarily update pyproject.toml or use environment variable
-    # For now, we'll create a custom command
-    
     print("Command:", " ".join(cmd))
     
     try:
         result = subprocess.run(
             cmd,
             check=True,
-            cwd=Path(__file__).parent,
-            env={**subprocess.os.environ, "FLWR_SERVER_APP": "flower2025.server_app_defense:app"}
+            cwd=project_dir
         )
         print(f"✓ Defense experiment {experiment_name} completed successfully!")
         return True
     except subprocess.CalledProcessError as e:
         print(f"✗ Defense experiment {experiment_name} failed!")
         return False
+    finally:
+        # Restore original pyproject.toml
+        if pyproject_backup.exists():
+            shutil.copy(pyproject_backup, pyproject_path)
+            pyproject_backup.unlink()
 
 
 def main():
