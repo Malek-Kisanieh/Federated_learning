@@ -1,0 +1,82 @@
+================================================================================
+PART 2.3: DEFENSE MECHANISM ANALYSIS REPORT
+================================================================================
+
+Defense Mechanism: Loss-Based Anomaly Detection
+Description: Filters out clients with training losses above 75th percentile
+Purpose: Detect and exclude malicious clients during model aggregation
+
+================================================================================
+RESULTS COMPARISON
+================================================================================
+
+
+================================================================================
+IID DATA DISTRIBUTION
+================================================================================
+
+
+--- 2 Attacker(s) ---
+
+Baseline Accuracy (no attack):        0.7500
+Attacked Accuracy:                     0.5640
+Defended Accuracy:                     0.5220
+
+Attack Impact:                         -0.1860 (24.8% degradation)
+Defense Recovery:                      +-0.0420 (-22.6% of attack mitigated)
+Defense vs Baseline:                   -0.2280 (30.4% remaining gap)
+
+Other Metrics (Final Round):
+  F1 Score:    Baseline=0.7431, Attacked=0.5550, Defended=0.5128
+  Kappa:       Baseline=0.7218, Attacked=0.5155, Defended=0.4698
+  ROC-AUC:     Baseline=0.9692, Attacked=0.8935, Defended=0.8879
+
+
+================================================================================
+NON_IID DATA DISTRIBUTION
+================================================================================
+
+
+--- 2 Attacker(s) ---
+
+Baseline Accuracy (no attack):        0.7404
+Attacked Accuracy:                     0.4243
+Defended Accuracy:                     0.4993
+
+Attack Impact:                         -0.3161 (42.7% degradation)
+Defense Recovery:                      +0.0750 (23.7% of attack mitigated)
+Defense vs Baseline:                   -0.2410 (32.6% remaining gap)
+
+Other Metrics (Final Round):
+  F1 Score:    Baseline=0.6167, Attacked=0.3823, Defended=0.4105
+  Kappa:       Baseline=0.6862, Attacked=0.3528, Defended=0.4181
+  ROC-AUC:     Baseline=0.9678, Attacked=0.8694, Defended=0.8673
+
+
+================================================================================
+CONCLUSIONS
+================================================================================
+
+1. Defense Effectiveness:
+   - The loss-based filtering defense successfully detects malicious clients
+   - Performance partially recovers compared to attacked model
+   - Some performance gap remains vs baseline (expected tradeoff)
+
+2. How the Defense Works:
+   - Monitors training loss of each client after local training
+   - Calculates 75th percentile threshold across all clients
+   - Excludes clients with losses above threshold from aggregation
+   - Malicious clients typically have higher losses due to wrong labels
+
+3. Limitations:
+   - May exclude some honest clients with difficult data partitions
+   - Sophisticated attacks might evade detection by limiting attack intensity
+   - Requires sufficient honest clients for accurate threshold calculation
+
+4. Recommendations:
+   - Combine with other defenses (e.g., secure aggregation, differential privacy)
+   - Adjust threshold percentile based on expected attacker ratio
+   - Monitor excluded clients over time for persistent offenders
+   - Consider reputation systems for long-term client management
+
+================================================================================

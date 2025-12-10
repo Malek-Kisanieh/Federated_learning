@@ -1,0 +1,50 @@
+# =====================================================================
+# Median defense configuration
+# =====================================================================
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "flower2025"
+version = "1.0.0"
+description = ""
+license = "Apache-2.0"
+dependencies = [
+    "flwr[simulation]>=1.23.0",
+    "flwr-datasets[vision]>=0.5.0",
+    "torch==2.7.1",
+    "torchvision==0.22.1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.flwr.app]
+publisher = "fed2025"
+
+# Point to MEDIAN ServerApp
+[tool.flwr.app.components]
+serverapp = "flower2025.server_app_median:app"
+clientapp = "flower2025.client_app:app"
+
+[tool.flwr.app.config]
+num-server-rounds = 50
+fraction-train = 1
+local-epochs = 1
+lr = 0.01
+use-iid = true
+strategy = "FedMedian"
+attacker-ids = "none"
+attack-type = "label_flipping"
+
+[tool.flwr.federations]
+default = "local-simulation"
+
+[tool.flwr.federations.local-simulation]
+options.num-supernodes = 5
+
+[tool.flwr.federations.remote-federation]
+address = "127.0.0.1:9093"
+root-certificates = "certificates/ca.crt"
