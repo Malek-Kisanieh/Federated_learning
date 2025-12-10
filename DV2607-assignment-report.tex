@@ -11,7 +11,7 @@
 
 % Title information
 \title{DV2607 - Adversarial Input Attack\\Inlämningsuppgift Del 2}
-\author{Samir Akhalil \\ saaa21@student.bth.se \and Förnamn Efternamn \\ akronym@student.bth.se}
+\author{Samir Akhalil \\ saaa21@student.bth.se \and Mhd Malek Kisaniehj \\ mhki22@student.bth.se}
 \date{\today}
 
 \begin{document}
@@ -165,25 +165,33 @@ Vi utförde 6 experiment för FedAvg med olika kombinationer av datadistribution
 
 \textbf{IID Data Distribution:}
 \begin{itemize}
-    \item \textbf{Baseline (0 attackerare)}: Accuracy = X\%, F1 = Y\%, Kappa = Z\%
-    \item \textbf{1 attackerare}: Accuracy = X\%, F1 = Y\%, Kappa = Z\% (XX\% degradering)
-    \item \textbf{2 attackerare}: Accuracy = X\%, F1 = Y\%, Kappa = Z\% (XX\% degradering)
+    \item \textbf{Baseline (0 attackerare)}: Accuracy = 75.0\%, F1 = 74.3\%, Kappa = 0.722, ROC-AUC = 0.969
+    \item \textbf{1 attackerare}: Accuracy = 68.6\%, F1 = 67.5\%, Kappa = 0.650, ROC-AUC = 0.948 (8.5\% degradering)
+    \item \textbf{2 attackerare}: Accuracy = 56.4\%, F1 = 55.5\%, Kappa = 0.515, ROC-AUC = 0.893 (24.8\% degradering)
 \end{itemize}
 
 \textbf{Non-IID Data Distribution:}
 \begin{itemize}
-    \item \textbf{Baseline (0 attackerare)}: Accuracy = X\%, F1 = Y\%, Kappa = Z\%
-    \item \textbf{1 attackerare}: Accuracy = X\%, F1 = Y\%, Kappa = Z\% (XX\% degradering)
-    \item \textbf{2 attackerare}: Accuracy = X\%, F1 = Y\%, Kappa = Z\% (XX\% degradering)
+    \item \textbf{Baseline (0 attackerare)}: Accuracy = 74.0\%, F1 = 61.7\%, Kappa = 0.686, ROC-AUC = 0.968
+    \item \textbf{1 attackerare}: Accuracy = 68.2\%, F1 = 52.3\%, Kappa = 0.612, ROC-AUC = 0.933 (7.9\% degradering)
+    \item \textbf{2 attackerare}: Accuracy = 42.4\%, F1 = 38.2\%, Kappa = 0.353, ROC-AUC = 0.869 (42.7\% degradering)
 \end{itemize}
 
 \textbf{Analys}:
 \begin{itemize}
     \item Label flipping-attacken hade signifikant negativ påverkan på modellens prestanda
-    \item Påverkan ökade linjärt med antalet malicious klienter
-    \item Non-IID data var mer känsligt för attacken jämfört med IID data
-    \item ROC-AUC visade minskad förmåga att separera klasser under attack
+    \item Påverkan ökade icke-linjärt med antalet malicious klienter (1 attackerare: \textasciitilde8\% degradering, 2 attackerare: 25-43\% degradering)
+    \item Non-IID data var betydligt mer känsligt för attacken (42.7\% degradering) jämfört med IID data (24.8\% degradering) vid 2 attackerare
+    \item ROC-AUC minskade från 0.969 till 0.869-0.893, vilket indikerar kraftigt försämrad klassseparation
+    \item F1-score drabbades hårdare än accuracy, särskilt för Non-IID data (från 61.7\% till 38.2\%)
 \end{itemize}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figures/attack_impact_comparison.png}
+\caption{Attack påverkan på FedAvg: Jämförelse mellan IID och Non-IID data. Non-IID data visar betydligt större sårbarhet (42.4\% accuracy med 2 attackerare) jämfört med IID data (56.4\%).}
+\label{fig:attack_impact}
+\end{figure}
 
 
 \subsection{Del 2.2: FedProx med attacker}
@@ -209,25 +217,33 @@ Vi upprepade samma 6 experiment som i Del 2.1 men med FedProx istället för Fed
 
 \textbf{IID Data Distribution:}
 \begin{itemize}
-    \item \textbf{Baseline (0 attackerare)}: Accuracy = X\%, F1 = Y\%, Kappa = Z\%
-    \item \textbf{1 attackerare}: Accuracy = X\%, F1 = Y\%, Kappa = Z\%
-    \item \textbf{2 attackerare}: Accuracy = X\%, F1 = Y\%, Kappa = Z\%
+    \item \textbf{Baseline (0 attackerare)}: Accuracy = 74.5\%, F1 = 74.1\%, Kappa = 0.716, ROC-AUC = 0.966
+    \item \textbf{1 attackerare}: Accuracy = 67.3\%, F1 = 66.6\%, Kappa = 0.636, ROC-AUC = 0.947
+    \item \textbf{2 attackerare}: Accuracy = 55.3\%, F1 = 53.7\%, Kappa = 0.503, ROC-AUC = 0.882
 \end{itemize}
 
 \textbf{Non-IID Data Distribution:}
 \begin{itemize}
-    \item \textbf{Baseline (0 attackerare)}: Accuracy = X\%, F1 = Y\%, Kappa = Z\%
-    \item \textbf{1 attackerare}: Accuracy = X\%, F1 = Y\%, Kappa = Z\%
-    \item \textbf{2 attackerare}: Accuracy = X\%, F1 = Y\%, Kappa = Z\%
+    \item \textbf{Baseline (0 attackerare)}: Accuracy = 75.0\%, F1 = 60.9\%, Kappa = 0.695, ROC-AUC = 0.966
+    \item \textbf{1 attackerare}: Accuracy = 71.7\%, F1 = 56.7\%, Kappa = 0.652, ROC-AUC = 0.937
+    \item \textbf{2 attackerare}: Accuracy = 56.2\%, F1 = 42.3\%, Kappa = 0.473, ROC-AUC = 0.880
 \end{itemize}
 
 \textbf{Jämförelse FedAvg vs FedProx}:
 \begin{itemize}
-    \item FedProx visade liknande sårbarhet mot label flipping som FedAvg
-    \item Proximal regularisering minskade inte attackens effekt signifikant
-    \item FedProx presterade något bättre på Non-IID data utan attack
-    \item Båda algoritmerna behöver explicit försvarsmekanism mot malicious klienter
+    \item FedProx visade liknande sårbarhet mot label flipping som FedAvg på IID data (båda \textasciitilde55\% med 2 attackerare)
+    \item På Non-IID data presterade FedProx betydligt bättre under attack: 56.2\% accuracy vs 42.4\% för FedAvg (13.8 procentenheter skillnad)
+    \item FedProx baseline var något högre på Non-IID (75.0\% vs 74.0\%), vilket tyder på bättre hantering av dataheterogenitet
+    \item Proximal regularisering gav viss robusthet mot attacken i Non-IID scenariot men inte i IID-scenariot
+    \item Båda algoritmerna behöver dock explicit försvarsmekanism för effektivt skydd
 \end{itemize}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/fedavg_vs_fedprox.png}
+\caption{FedAvg vs FedProx robusthet: På Non-IID data med 2 attackerare presterar FedProx betydligt bättre (56.2\% vs 42.4\%), vilket visar att proximal regularisering ger naturlig resistens mot label flipping-attacker.}
+\label{fig:fedavg_vs_fedprox}
+\end{figure}
 
 
 \subsection{Del 2.3: Försvarsmekanism 1 - Loss-Based Anomaly Detection}
@@ -277,148 +293,140 @@ class FedAvgDefense(FedAvg):
 
 \textbf{IID Data med 1 attackerare}:
 \begin{itemize}
-    \item \textbf{Utan försvar}: Accuracy = X\%
-    \item \textbf{Med loss-filter}: Accuracy = Y\% (XX\% återhämtning)
-    \item \textbf{Klienter filtrerade}: Genomsnitt Z per runda
+    \item \textbf{Utan försvar}: Accuracy = 68.6\%
+    \item \textbf{Med loss-filter}: Accuracy = 68.5\% (praktiskt taget oförändrat)
+    \item Försvaret var ineffektivt på IID data med endast 1 attackerare
 \end{itemize}
 
 \textbf{IID Data med 2 attackerare}:
 \begin{itemize}
-    \item \textbf{Utan försvar}: Accuracy = X\%
-    \item \textbf{Med loss-filter}: Accuracy = Y\% (XX\% återhämtning)
-    \item \textbf{Klienter filtrerade}: Genomsnitt Z per runda
+    \item \textbf{Utan försvar}: Accuracy = 56.4\%
+    \item \textbf{Med loss-filter}: Accuracy = 52.2\% (försämring med 4.2 procentenheter)
+    \item Försvaret var kontraproduktivt och filtrade bort ärliga klienter (false positives)
 \end{itemize}
 
 \textbf{Non-IID Data med 1 attackerare}:
 \begin{itemize}
-    \item \textbf{Utan försvar}: Accuracy = X\%
-    \item \textbf{Med loss-filter}: Accuracy = Y\% (XX\% återhämtning)
+    \item \textbf{Utan försvar}: Accuracy = 68.2\%
+    \item \textbf{Med loss-filter}: Accuracy = 69.6\% (23.9\% återhämtning av förlorad prestanda)
+    \item Försvaret identifierade och exkluderade attackeraren effektivt
 \end{itemize}
 
 \textbf{Non-IID Data med 2 attackerare}:
 \begin{itemize}
-    \item \textbf{Utan försvar}: Accuracy = X\%
-    \item \textbf{Med loss-filter}: Accuracy = Y\% (XX\% återhämtning)
+    \item \textbf{Utan försvar}: Accuracy = 42.4\%
+    \item \textbf{Med loss-filter}: Accuracy = 49.9\% (23.7\% återhämtning av förlorad prestanda)
+    \item Försvaret återställde 7.5 procentenheter, vilket är betydande förbättring
 \end{itemize}
 
 \textbf{Analys}:
 \begin{itemize}
-    \item Loss-based filtering identifierade effektivt malicious klienter
-    \item Försvaret återställde XX-XX\% av den förlorade prestandan
-    \item Få false positives (ärliga klienter filtrerades sällan)
-    \item Mer effektivt på IID data där loss-distributionen är mer homogen
+    \item Loss-based filtering var \textbf{mycket effektiv på Non-IID data} (23-24\% återhämtning) men \textbf{ineffektiv på IID data}
+    \item På IID data var loss-variationen för liten mellan ärliga och malicious klienter, vilket ledde till false positives
+    \item På Non-IID data hade malicious klienter signifikant högre förluster, vilket gjorde detektion enklare
+    \item Försvaret återställde upp till 7.5 procentenheter accuracy på Non-IID data med 2 attackerare
     \item Enkel att implementera och kräver ingen modellmodifiering
+    \item 75:e percentil-tröskelvärdet fungerade bra för Non-IID men behöver justeras för IID-scenarion
 \end{itemize}
 
-
-\subsection{Del 2.4: Försvarsmekanism 2 - Coordinate-wise Median Aggregation}
-
-\subsubsection{Beskrivning av försvarsmetod}
-
-Vår andra försvarsmekanism använder \textbf{coordinate-wise median aggregation} istället för medelvärde (mean). Detta är en Byzantine-robust aggregeringsmetod som är resistent mot outliers i viktuppdateringar.
-
-\textbf{Teori}:
-Median-aggregering är provably robust mot upp till 50\% malicious klienter. Till skillnad från medelvärde, som påverkas starkt av extrema värden, är median resistent mot outliers.
-
-\textbf{Algoritm}:
-För varje parameter $\theta_i$ i modellen:
-\[\theta_i^{t+1} = \text{median}(\theta_{i,1}^t, \theta_{i,2}^t, \ldots, \theta_{i,K}^t)\]
-
-där $\theta_{i,k}^t$ är värdet av parameter $i$ från klient $k$ vid runda $t$.
-
-\textbf{Fördelar}:
-\begin{itemize}
-    \item Ingen threshold-tuning behövs
-    \item Provably Byzantine-robust (upp till 50\% attackerare)
-    \item Inga klienter exkluderas (mer rättvist)
-    \item Fungerar oberoende av datadistribution
-\end{itemize}
-
-\textbf{Nackdelar}:
-\begin{itemize}
-    \item Mer beräkningsintensiv än FedAvg
-    \item Konvergerar långsammare i vissa fall
-    \item Ineffektiv om majoriteten (>50\%) är malicious
-\end{itemize}
-
-\subsubsection{Implementation}
-
-\begin{verbatim}
-class FedMedian(FedAvg):
-    def aggregate_fit(self, server_round, results, failures):
-        weights_results = [
-            (parameters_to_ndarrays(fit_res.parameters), 
-             fit_res.num_examples)
-            for _, fit_res in results
-        ]
-        
-        # Stack all client weights along new dimension
-        all_weights = [np.stack([w[i] for w, _ in 
-                       weights_results], axis=0) 
-                       for i in range(len(weights_results[0][0]))]
-        
-        # Compute coordinate-wise median
-        aggregated_weights = [
-            np.median(layer_weights, axis=0) 
-            for layer_weights in all_weights
-        ]
-        
-        parameters_aggregated = ndarrays_to_parameters(
-            aggregated_weights
-        )
-        
-        return parameters_aggregated, {}
-\end{verbatim}
-
-\subsubsection{Experimentella resultat}
-
-\textbf{IID Data}:
-\begin{itemize}
-    \item \textbf{1 attackerare}: Accuracy = X\% (jämfört med Y\% utan försvar)
-    \item \textbf{2 attackerare}: Accuracy = X\% (jämfört med Y\% utan försvar)
-\end{itemize}
-
-\textbf{Non-IID Data}:
-\begin{itemize}
-    \item \textbf{1 attackerare}: Accuracy = X\% (jämfört med Y\% utan försvar)
-    \item \textbf{2 attackerare}: Accuracy = X\% (jämfört med Y\% utan försvar)
-\end{itemize}
-
-\subsubsection{Jämförelse av båda försvarsmekanism}
-
-\begin{table}[h]
+\begin{figure}[h]
 \centering
-\begin{tabular}{|l|c|c|c|}
-\hline
-\textbf{Metrik} & \textbf{Loss-Filter} & \textbf{Median} & \textbf{Vinnare} \\
-\hline
-IID, 1 attackerare & X\% & Y\% & ? \\
-IID, 2 attackerare & X\% & Y\% & ? \\
-Non-IID, 1 attackerare & X\% & Y\% & ? \\
-Non-IID, 2 attackerare & X\% & Y\% & ? \\
-\hline
-Genomsnittlig återhämtning & XX\% & YY\% & ? \\
-\hline
-\end{tabular}
-\caption{Jämförelse av båda försvarsmekanism}
-\end{table}
+\includegraphics[width=\textwidth]{figures/defense_effectiveness.png}
+\caption{Försvarsmekanism effektivitet: Loss-based filtering visar dramatisk skillnad mellan IID (vänster) och Non-IID (höger) data. På Non-IID data återställer försvaret 7.5 procentenheter accuracy (från 42.4\% till 49.9\%), medan det på IID data är kontraproduktivt.}
+\label{fig:defense_effectiveness}
+\end{figure}
 
-\textbf{Slutsatser}:
+
+\subsection{Del 2.4: Slutsatser och Rekommendationer}
+
+\subsubsection{Sammanfattning av experimentella resultat}
+
+Våra experiment visade följande huvudsakliga fynd:
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figures/final_accuracy_comparison.png}
+\caption{Översikt av alla experiment: Final accuracy för alla kombinationer av algoritm, datadistribution och antal attackerare. Visar tydligt att Non-IID data är mer sårbart och att försvarsmekanismen endast fungerar effektivt på Non-IID data.}
+\label{fig:final_accuracy}
+\end{figure}
+
+\begin{enumerate}
+    \item \textbf{Label flipping-attackens påverkan}:
+    \begin{itemize}
+        \item Attacken hade betydande negativ påverkan på modellprestanda
+        \item Non-IID data var mer sårbart (42.7\% accuracy-degradering vid 2 attackerare) än IID data (24.8\%)
+        \item Påverkan ökade icke-linjärt med antalet attackerare
+    \end{itemize}
+    
+    \item \textbf{FedProx vs FedAvg}:
+    \begin{itemize}
+        \item FedProx visade bättre robusthet på Non-IID data (56.2\% vs 42.4\% vid 2 attackerare)
+        \item På IID data var skillnaden minimal (båda \textasciitilde55-56\%)
+        \item Proximal regularisering gav viss naturlig resistens mot attacken i heterogena scenario
+    \end{itemize}
+    
+    \item \textbf{Loss-based defense effektivitet}:
+    \begin{itemize}
+        \item \textbf{Mycket effektiv på Non-IID data}: 23-24\% återhämtning av förlorad prestanda
+        \item \textbf{Ineffektiv på IID data}: Ingen förbättring eller till och med försämring
+        \item Anledning: På Non-IID data har malicious klienter signifikant högre förluster, vilket gör detektion enklare
+        \item På IID data överlappar loss-distributionen mellan ärliga och malicious klienter
+    \end{itemize}
+\end{enumerate}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figures/f1_score_analysis.png}
+\caption{F1-Score analys: Vänster visar att Non-IID data har lägre F1-score än IID data under attack. Höger visar försvarsmekanism påverkan på F1-score för Non-IID data, där försvaret förbättrar klassbalansen.}
+\label{fig:f1_analysis}
+\end{figure}
+
+\subsubsection{Rekommendationer för praktisk tillämpning}
+
+\textbf{För produktionsmiljöer}:
+\begin{enumerate}
+    \item \textbf{Vid Non-IID data}:
+    \begin{itemize}
+        \item Använd FedProx som basalgoritm (bättre naturlig robusthet)
+        \item Implementera loss-based filtering med 75:e percentil-tröskel
+        \item Förvänta 20-25\% återhämtning av prestanda under attack
+    \end{itemize}
+    
+    \item \textbf{Vid IID data}:
+    \begin{itemize}
+        \item FedAvg och FedProx ger liknande resultat
+        \item Loss-based filtering är ej tillräckligt - alternativa metoder behövs
+        \item Överväg coordinate-wise median aggregation eller gradient clipping
+        \item Implementera kompletterande säkerhetsåtgärder (t.ex. multi-Krum, trimmed mean)
+    \end{itemize}
+    
+    \item \textbf{Generella råd}:
+    \begin{itemize}
+        \item Kombinera flera försvarsmekanism för robusthet
+        \item Monitera loss-distributioner kontinuerligt för anomaly detection
+        \item Använd Byzantine-robust aggregering vid misstänkt aktivitet
+        \item Överväg reputationssystem för klienter över tid
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Begränsningar och framtida arbete}
+
+\textbf{Begränsningar i vår studie}:
 \begin{itemize}
-    \item Båda försvaren reducerar attackens påverkan signifikant
-    \item [Vilket försvar som presterade bättre baserat på dina faktiska resultat]
-    \item Loss-filtering: Enklare, snabbare, men kräver threshold-tuning
-    \item Median: Mer robust teoretiskt, inget tuning behövs, men långsammare
-    \item För produktionsmiljö: Rekommendation baserat på attack-scenario
+    \item Endast en försvarsmetod implementerad (loss-based filtering)
+    \item Endast label flipping-attack testades (andra attacktyper finns)
+    \item Relativt litet antal klienter (5) - skalbarhet ej testad
+    \item 75:e percentil-tröskelvärdet kan behöva anpassas per scenario
 \end{itemize}
 
-\textbf{Rekommendationer}:
-\begin{enumerate}
-    \item Vid få attackerare (<25\%): Loss-filtering är effektivt och snabbt
-    \item Vid okänd attack-ratio: Median är säkrare och kräver ingen tuning
-    \item För maximal säkerhet: Kombinera båda metoderna (median + loss-monitoring)
-    \item Vid Non-IID data: Använd FedProx + Median för bästa robusthet
-\end{enumerate}
+\textbf{Framtida arbete}:
+\begin{itemize}
+    \item Implementera och jämföra fler försvarsmetoder (Krum, Trimmed Mean, Median)
+    \item Testa mot sofistikerade attacker (model poisoning, backdoor attacks)
+    \item Utvärdera med större antal klienter och varierande attack-ratio
+    \item Utveckla adaptiva tröskelvärden för loss-based filtering
+    \item Undersöka hybrid-metoder som kombinerar flera försvarsmekanismer
+\end{itemize}
 
 
 \section{Referenser}
