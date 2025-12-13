@@ -1,14 +1,18 @@
-"""flower2025: A Flower / PyTorch app with defense mechanism."""
+"""flower2025: A Flower / PyTorch app with defense mechanisms.
+
+Mhd Malek Kisanieh
+Samir Akhalil
+"""
 
 import torch
-from flwr.app import ArrayRecord, ConfigRecord, Context
-from flwr.serverapp import Grid, ServerApp
-from flwr.serverapp.strategy import FedAvg
-from flwr.app import ArrayRecord, Context
-from flower2025.task import Net, load_data, test as test_fn
 import json
 import os
 import numpy as np
+
+from flwr.app import ArrayRecord, ConfigRecord, Context
+from flwr.serverapp import Grid, ServerApp
+from flwr.serverapp.strategy import FedAvg
+from flower2025.task import Net, load_data, test as test_fn
 
 # Create ServerApp with defense
 app = ServerApp()
@@ -20,7 +24,6 @@ class FedAvgDefense(FedAvg):
     def __init__(self, *args, loss_threshold_percentile=75, **kwargs):
         super().__init__(*args, **kwargs)
         self.loss_threshold_percentile = loss_threshold_percentile
-        self.excluded_clients = []
         
     def aggregate_fit(self, server_round, results, failures):
         """Aggregate with anomaly detection on training losses."""
@@ -75,7 +78,6 @@ def main(grid: Grid, context: Context) -> None:
     lr: float = context.run_config["lr"]
     use_iid: bool = context.run_config.get("use-iid", True)
     
-    # Defense parameters
     loss_threshold_percentile: int = context.run_config.get("loss-threshold-percentile", 75)
     
     # For saving results with unique filename
@@ -88,16 +90,17 @@ def main(grid: Grid, context: Context) -> None:
     num_attackers = len(attacker_ids)
     data_dist = "iid" if use_iid else "non_iid"
     
-    # Create unique experiment name with defense marker
-    experiment_name = f"FedAvgDefense_{data_dist}_{num_attackers}attackers"
+    strategy_name = "FedAvgDefense"
+    experiment_name = f"{strategy_name}_{data_dist}_{num_attackers}attackers"
     
-    print(f"\n{'='*80}")
-    print(f"Starting experiment with DEFENSE: {experiment_name}")
+    print(f"\n{'='*70}")
+    print(f"Experiment: {experiment_name}")
     print(f"Strategy: FedAvg + Loss-Based Defense")
-    print(f"Data: {data_dist}, Attackers: {num_attackers}")
-    print(f"Attacker IDs: {attacker_ids}, Attack type: {attack_type}")
-    print(f"Defense: Loss threshold at {loss_threshold_percentile}th percentile")
-    print(f"{'='*80}\n")
+    print(f"Data distribution: {data_dist}")
+    print(f"Number of attackers: {num_attackers}")
+    if num_attackers > 0:
+        print(f"Attacker IDs: {attacker_ids}")
+    print(f"{'='*70}\n")
 
     # Load global model
     global_model = Net()
@@ -126,12 +129,11 @@ def main(grid: Grid, context: Context) -> None:
             "roc": roc_value
         }
 
-    # Initialize FedAvg with defense
     strategy = FedAvgDefense(
         fraction_train=fraction_train,
         loss_threshold_percentile=loss_threshold_percentile,
     )
-    print(f"Using FedAvg with Loss-Based Defense (threshold: {loss_threshold_percentile}th percentile)")
+    print(f"Using Loss-Based Defense (threshold: {loss_threshold_percentile}th percentile)")
 
     # Start strategy
     result = strategy.start(
@@ -145,14 +147,13 @@ def main(grid: Grid, context: Context) -> None:
     # Save metrics with experiment-specific filename
     metrics_to_save = {
         "experiment_config": {
-            "strategy": "FedAvgDefense",
+            "strategy": strategy_name,
             "data_distribution": data_dist,
             "num_attackers": num_attackers,
             "attacker_ids": attacker_ids,
             "attack_type": attack_type,
             "num_rounds": num_rounds,
             "num_clients": 5,
-            "defense_mechanism": "loss_based_filtering",
             "loss_threshold_percentile": loss_threshold_percentile,
         },
         "train_metrics_clientapp": {k: dict(v) for k, v in result.train_metrics_clientapp.items()},
@@ -175,6 +176,4 @@ def main(grid: Grid, context: Context) -> None:
     state_dict = result.arrays.to_torch_state_dict()
     torch.save(state_dict, model_filename)
     
-    print(f"\n{'='*80}")
-    print(f"Experiment {experiment_name} completed!")
-    print(f"{'='*80}\n")
+    print(f"\nExperiment completed: {experiment_name}")

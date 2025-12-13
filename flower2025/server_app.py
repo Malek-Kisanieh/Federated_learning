@@ -1,6 +1,8 @@
-# Mhd Malek Kisanieh
-# Samir Akhalil
-"""flower2025: A Flower / PyTorch app."""
+"""flower2025: A Flower / PyTorch app.
+
+Mhd Malek Kisanieh
+Samir Akhalil
+"""
 
 import torch
 from flwr.app import ArrayRecord, ConfigRecord, Context

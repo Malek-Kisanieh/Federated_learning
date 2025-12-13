@@ -24,9 +24,9 @@ def load_and_summarize():
         print("Run experiments first.\n")
         return
     
-    print(f"\n{'='*80}")
+    print(f"\n{'-'*60}")
     print(f"EXPERIMENT RESULTS SUMMARY")
-    print(f"{'='*80}\n")
+    print(f"{'-'*60}\n")
     print(f"Found {len(results_files)} completed experiments\n")
     
     # Collect all results
@@ -71,9 +71,9 @@ def load_and_summarize():
     print(tabulate(data, headers=headers, tablefmt="grid"))
     
     # Calculate some statistics
-    print(f"\n{'='*80}")
+    print(f"\n{'-'*60}")
     print("KEY OBSERVATIONS")
-    print(f"{'='*80}\n")
+    print(f"{'-'*60}\n")
     
     # Group by strategy and data distribution
     for strategy in ["FedAvg", "FedProx"]:
@@ -95,10 +95,6 @@ def load_and_summarize():
                     print(f"  1 Attacker Impact:     {baseline_acc - one_att_acc:+.4f} ({((baseline_acc - one_att_acc) / baseline_acc * 100):.1f}% degradation)")
                     print(f"  2 Attackers Impact:    {baseline_acc - two_att_acc:+.4f} ({((baseline_acc - two_att_acc) / baseline_acc * 100):.1f}% degradation)")
                     print()
-    
-    print(f"{'='*80}")
-    print("\nFor detailed visualizations, run: python analyze_results.py")
-    print(f"{'='*80}\n")
 
 
 if __name__ == "__main__":

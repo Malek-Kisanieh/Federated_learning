@@ -9,6 +9,11 @@
 \usepackage{listings}
 \usepackage{xcolor}
 
+\hypersetup{
+    colorlinks=false,
+    hidelinks
+}
+
 % Title information
 \title{DV2607 - Adversarial Input Attack\\Inlämningsuppgift Del 2}
 \author{Samir Akhalil \\ saaa21@student.bth.se \and Mhd Malek Kisaniehj \\ mhki22@student.bth.se}
@@ -26,33 +31,33 @@
 
 \subsection{Beskrivning av adversarial input attacker}
 
-Adversarial input attacker är en typ av säkerhetsattack mot maskininlärningsmodeller där små, nästan omärkliga förändringar görs i indata för att lura modellen att göra felaktiga prediktioner. Dessa förändringar, kallade \textit{perturbationer}, är designade för att vara så små att de inte kan uppfattas av det mänskliga ögat, men de är tillräckligt stora för att påverka modellens beslut dramatiskt.
+Adversarial input attacker är när man gör små förändringar i indata för att lura en maskininlärningsmodell. Förändringarna (perturbationer) är så små att människor inte märker dem, men de får modellen att göra helt fel klassificeringar.
 
-Attacken fungerar genom att utnyttja hur neurala nätverk behandlar information. Modeller som djupa neurala nätverk lär sig komplexa icke-linjära funktioner genom att optimera viktparametrar baserat på träningsdata. Adversarial attacker utnyttjar denna komplexitet genom att beräkna gradienter av förlustfunktionen med avseende på indata och sedan modifiera indata i riktning som maximerar prediktionsfelet.
+Attacken fungerar genom att man beräknar gradienten av modellens förlustfunktion och ändrar bilden i den riktningen som maximerar felet. Neurala nätverk är känsliga för detta eftersom de lär sig komplexa funktioner som kan manipuleras.
 
-I vårt fall användes en \textit{targeted attack}, vilket betyder att målet inte bara är att få modellen att göra fel, utan att få den att klassificera bilden som en specifik, förutbestämd klass (traktor istället för koala).
+Vi använde en \textit{targeted attack}, vilket betyder att vi ville få modellen att klassificera koalabilden som just traktor, inte bara vilken fel klass som helst.
 
 
 \subsection{Implementation av er attack}
 
-Vi implementerade en \textbf{Basic Iterative Method (BIM)} attack, även känd som I-FGSM (Iterative Fast Gradient Sign Method). BIM är en iterativ variant av FGSM som upprepade gånger applicerar små perturbationer istället för en enda stor förändring.
+Vi använde \textbf{Basic Iterative Method (BIM)}, också kallad I-FGSM. BIM applicerar små perturbationer upprepade gånger istället för en stor förändring på en gång.
 
-\textbf{Hur BIM fungerar:}
+\textbf{Hur det fungerar:}
 \begin{enumerate}
-    \item Börja med originalbilden $x_0$
-    \item För varje iteration $t = 1, 2, \ldots, N$:
-    \begin{itemize}
-        \item Beräkna gradienten av förlustfunktionen med avseende på indata
-        \item Ta ett litet steg $\epsilon_{\text{step}}$ i riktning som ökar förlusten för målklassen
-        \item Klipp resultatet så att total perturbation inte överskrider $\epsilon_{\text{max}}$
-    \end{itemize}
-    \item Returnera den modifierade bilden $x_{\text{adv}}$
+\item Börja med originalbilden $x_0$
+\item För varje iteration ($t = 1, 2, \ldots, N$):
+\begin{itemize}
+\item Beräkna gradienten av förlusten
+\item Ta ett litet steg $\epsilon_{\text{step}}$ mot målklassen
+\item Se till att total förändring inte blir större än $\epsilon_{\text{max}}$
+\end{itemize}
+\item Returnera den adversariella bilden
 \end{enumerate}
 
-Matematiskt kan detta uttryckas som:
-\[x_{t+1} = \text{Clip}_{x_0, \epsilon}\left(x_t + \epsilon_{\text{step}} \cdot \text{sign}(\nabla_x L(x_t, y_{\text{target}}))\right)\]
+Formeln blir:
+\[x_{t+1} = \text{Clip}_{x_0, \epsilon}\left(x_t - \epsilon_{\text{step}} \cdot \text{sign}(\nabla_x L(x_t, y_{\text{target}}))\right)\]
 
-där $L$ är förlustfunktionen och $y_{\text{target}}$ är målklassen (traktor).
+där $L$ är förlustfunktionen och $y_{\text{target}}$ är målklassen (traktor). Minustecknet används eftersom vi vill minimera förlusten för just målklassen.
 
 \textbf{Bibliotek som användes:}
 \begin{itemize}
@@ -62,33 +67,43 @@ där $L$ är förlustfunktionen och $y_{\text{target}}$ är målklassen (traktor
     \item \texttt{Matplotlib}: För visualisering av bilder och perturbationer
 \end{itemize}
 
-Våra hyperparametrar var: $\epsilon_{\text{max}} = 8.0$, $\epsilon_{\text{step}} = 2.0$, och $\text{max\_iter} = 40$. Attacken lyckades klassificera koalabilden som traktor med 100\% confidence.
+Våra hyperparametrar var: $\epsilon_{\text{max}} = 8.0$, $\epsilon_{\text{step}} = 2.0$, och $\text{max\_iter} = 50$. 
+
+\textbf{Experimentella resultat:}
+\begin{itemize}
+    \item \textbf{Original klassificering}: Koala (ImageNet klass 105) med 99.8\% confidence
+    \item \textbf{Adversarial klassificering}: Traktor (ImageNet klass 866) med 100\% confidence
+    \item \textbf{Perturbation metrics}: $L_\infty$ norm = 8.0, $L_2$ norm $\approx$ 1990
+    \item \textbf{Visuell imperceptibilitet}: Maximal pixelförändring endast 3.1\% av totalt värde (8/255)
+\end{itemize}
+
+Attacken lyckades helt - modellen klassificerade koalabilden som traktor med 99.9\% confidence.
 
 
 \subsection{Säkerhetsåtgärder}
 
-Vi valde \textbf{Gaussian Blur} som skyddsåtgärd mot BIM-attacken. Detta är en inputtransformationsmetod som applicerar en låg-pass-filter på bilden före klassificering.
+Vi valde \textbf{Gaussian Blur} som skyddsåtgärd mot BIM-attacken. Detta är en inputtransformationsmetod som applicerar en lågpassfilter på bilden före klassificering.
 
-\textbf{Motivering för valet:}
+\textbf{Varför vi valde Gaussian blur:}
 
-\begin{enumerate}
-    \item \textbf{Effektivitet mot högfrekventa perturbationer}: BIM-attacken lägger till små, högfrekventa störningar i bilden. Gaussian blur fungerar som ett låg-pass-filter som tar bort eller minskar dessa högfrekventa komponenter utan att förstöra bildens huvudsakliga innehåll.
-    
-    \item \textbf{Enkelhet och effektivitet}: Jämfört med mer komplexa metoder som adversarial training (som kräver oträning av hela modellen) eller defensive distillation, är Gaussian blur enkelt att implementera och kräver ingen modifiering av modellen själv.
-    
-    \item \textbf{Beräkningseffektivitet}: Blur-operationen är mycket snabb och kan appliceras i realtid, vilket gör den praktisk för produktionsmiljöer.
-    
-    \item \textbf{Bevarar bildkvalitet}: Med rätt radius (vi använde radius=1) kan blur ta bort adversarial perturbationer samtidigt som bilden fortfarande ser acceptabel ut för mänskliga ögon.
-\end{enumerate}
-
-\textbf{Alternativa metoder vi övervägde:}
 \begin{itemize}
-    \item \textit{Adversarial Training}: Träna modellen med adversarial exempel, men detta kräver oträning och stora datamängder
-    \item \textit{Input Quantization}: Reducera bildupplösningen, men detta kan påverka legitima prediktioner negativt
-    \item \textit{Defensive Distillation}: Träna en mjukare modell, men kräver tillgång till träningsdata och är beräkningsintensivt
+    \item BIM-attacken lägger till små högfrekventa störningar. Gaussian blur fungerar som ett låg-pass-filter som tar bort dessa utan att förstöra bildens huvudsakliga innehåll.
+    
+    \item Det är enkelt att implementera jämfört med adversarial training eller defensive distillation som kräver omträning av modellen.
+    
+    \item Blur är snabbt och kan köras i realtid.
+    
+    \item Med rätt radius (vi använde 1) bevaras bildkvaliteten tillräckligt för att fortfarande se vad bilden föreställer.
 \end{itemize}
 
-Gaussian blur erbjuder den bästa balansen mellan effektivitet, enkelhet och prestanda för vårt specifika användningsfall.
+\textbf{Andra metoder vi tittade på:}
+\begin{itemize}
+    \item \textit{Adversarial Training}: Träna med adversarial exempel, men det tar lång tid och kräver mycket data
+    \item \textit{Input Quantization}: Sänk upplösningen, men det påverkar även vanliga bilder negativt
+    \item \textit{Defensive Distillation}: Träna en mjukare modell, men det är beräkningsintensivt
+\end{itemize}
+
+Gaussian blur var den enklaste metoden som ändå fungerade bra.
 
 
 \subsection{Implementation av skyddsåtgärder (frivilligt)}
@@ -97,177 +112,178 @@ Vi implementerade Gaussian blur med radius=1 som preprocessingsteg innan klassif
 
 \textbf{Resultat:}
 \begin{itemize}
-    \item \textbf{Före skydd}: Den adversarial bilden klassificerades som \textit{tractor} med 100.0\% confidence
-    \item \textbf{Efter skydd}: Den blurrade bilden klassificerades korrekt som \textit{koala} med 97\% confidence
+    \item \textbf{Före skydd}: den adversariella bilden klassificerades som \textit{tractor} (klass 866) med 99.9\% confidence
+    \item \textbf{Efter skydd}: Den blurrade bilden klassificerades korrekt som \textit{koala} (klass 105) med 99\% confidence
 \end{itemize}
 
 \textbf{Analys:}
 
-Gaussian blur lyckades helt neutralisera BIM-attacken. Den högfrekventa perturbationen som attacken lade till för att lura modellen togs effektivt bort av blur-filtret. Detta resulterade i att modellen kunde återgå till korrekt klassificering.
+Gaussian blur funkade riktigt bra - den tog bort de högfrekventa perturbationerna som attacken lade till, så modellen klassificerade bilden korrekt igen.
 
-Blur-operationen introducerar dock en trade-off: medan den skyddar mot adversarial attacker, reducerar den också bildens skärpa något. För tillämpningar där bildkvalitet är kritisk måste denna avvägning övervägas noggrant. I vårt fall var blur-effekten minimal (radius=1) och bilden var fortfarande fullt igenkännbar.
+Nackdelen är att blur gör bilden lite suddig. Men med radius=1 var effekten så liten att bilden fortfarande var tydlig.
 
-Det är också viktigt att notera att detta skydd inte är universellt. Mer sofistikerade attacker (t.ex. C\&W attack eller adaptiva attacker som tar hänsyn till blur-försvaret) kan potentiellt kringgå detta skydd. För högre säkerhet skulle en kombination av metoder (blur + adversarial training) vara lämplig.
+Skyddet är inte perfekt. Mer avancerade attacker (t.ex. C\&W attack) kan kringgå blur genom att ta hänsyn till det i attacken. För bättre säkerhet skulle man behöva kombinera flera metoder.
 
 
-\section{Del 2: Federerad Machine Learning}
+\section{Part 2: Federated learning scenario}
 
-\subsection{Del 2.1: FedAvg med attacker}
+\subsection{Part 2.1: FedAvg with Attacks}
 
-\subsubsection{Beskrivning av federated learning scenario}
+\subsubsection{Description of Federated Learning Scenario}
 
-Federerat lärande (FL) är en distribuerad maskininlärningsmetod där flera klienter tränar en gemensam modell lokalt på sina egna data utan att dela rådata med en central server. I vårt scenario simulerade vi ett FL-system med följande konfiguration:
+In Federated Learning (FL), multiple clients train a shared model locally on their own data without sharing raw data with a central server. We simulated an FL system with:
 
 \begin{itemize}
-    \item \textbf{Dataset}: CIFAR-10 (10 klasser av 32x32 färgbilder)
-    \item \textbf{Antal klienter}: 5
-    \item \textbf{Kommunikationsrundor}: 50
-    \item \textbf{Aggregeringsstrategi}: FedAvg (Federated Averaging)
-    \item \textbf{Modell}: Convolutional Neural Network (CNN) med 3 konvolutionslager
-    \item \textbf{Datadistributioner}: IID (Independent and Identically Distributed) och Non-IID (Dirichlet distribution med $\alpha = 0.5$)
+    \item \textbf{Dataset}: CIFAR-10 (10 classes of 32x32 color images)
+    \item \textbf{Number of clients}: 5
+    \item \textbf{Communication rounds}: 50
+    \item \textbf{Aggregation strategy}: FedAvg (Federated Averaging)
+    \item \textbf{Model}: Convolutional Neural Network (CNN) with 3 convolutional layers
+    \item \textbf{Data distributions}: IID (Independent and Identically Distributed) and Non-IID (Dirichlet distribution with $\alpha = 0.5$)
 \end{itemize}
 
-\textbf{FedAvg-algoritmen}:
+\textbf{FedAvg Algorithm}:
 \begin{enumerate}
-    \item Server initierar en global modell med slumpmässiga vikter
-    \item För varje kommunikationsrunda $t = 1, 2, \ldots, T$:
+    \item Server initializes a global model
+    \item For each round ($t = 1, 2, \ldots, T$):
     \begin{itemize}
-        \item Server skickar den aktuella globala modellen till alla klienter
-        \item Varje klient $k$ tränar modellen lokalt på sin data och får uppdaterade vikter $w_k^t$
-        \item Klienter skickar sina uppdaterade vikter tillbaka till servern
-        \item Server aggregerar viktuppdateringarna genom viktad medelvärdesbildning:
+        \item Server sends model to all clients
+        \item Each client $k$ trains locally and gets new weights $w_k^t$
+        \item Clients send weights back to server
+        \item Server averages the weights:
         \[w^{t+1} = \sum_{k=1}^{K} \frac{n_k}{n} w_k^t\]
-        där $n_k$ är antal samples hos klient $k$ och $n = \sum_{k=1}^{K} n_k$
+        where $n_k$ is the number of samples at client $k$
     \end{itemize}
-    \item Returnera den slutliga globala modellen
+    \item Return final model
 \end{enumerate}
 
-\subsubsection{Implementation av label flipping attack}
+\subsubsection{Implementation of Label Flipping Attack}
 
-Vi implementerade en \textbf{label flipping attack} där vissa klienter är malicious och manipulerar sina träningslabels. Specifikt:
+We implemented a \textbf{label flipping attack} where malicious clients manipulate their training labels:
 
 \begin{itemize}
-    \item \textbf{Attackmekanism}: Malicious klienter ersätter korrekta labels med slumpmässiga felaktiga labels under lokal träning
-    \item \textbf{Attackare}: Vi testade med 0, 1, eller 2 malicious klienter av totalt 5 (0\%, 20\%, 40\%)
-    \item \textbf{Malicious klient-ID}: Klient 3 (vid 1 attackerare) och klienter 3-4 (vid 2 attackerare)
+    \item Malicious clients replace correct labels with random incorrect labels during training
+    \item We tested with 0, 1, or 2 attackers out of 5 clients (0\%, 20\%, 40\%)
+    \item Attacker IDs: Client 3 (1 attacker) or clients 3-4 (2 attackers)
 \end{itemize}
 
-Attacken implementerades i \texttt{client\_app.py} genom att modifiera träningsfunktionen:
-\begin{verbatim}
+The attack was implemented in task.py within the training function:
+
+\begin{lstlisting}
 if is_attacker:
-    # Replace true labels with random labels
-    labels = torch.randint(0, 10, labels.shape)
-\end{verbatim}
+    if attack_type == "label_flipping":
+        labels = torch.randint(0, 10, labels.shape, device=device)
+\end{lstlisting}
 
-\subsubsection{Experimentella resultat}
+\subsubsection{Experimental Results}
 
-Vi utförde 6 experiment för FedAvg med olika kombinationer av datadistribution och antal attackerare:
+We conducted 6 experiments for FedAvg with different combinations of data distribution and number of attackers:
 
 \textbf{IID Data Distribution:}
 \begin{itemize}
-    \item \textbf{Baseline (0 attackerare)}: Accuracy = 75.0\%, F1 = 74.3\%, Kappa = 0.722, ROC-AUC = 0.969
-    \item \textbf{1 attackerare}: Accuracy = 68.6\%, F1 = 67.5\%, Kappa = 0.650, ROC-AUC = 0.948 (8.5\% degradering)
-    \item \textbf{2 attackerare}: Accuracy = 56.4\%, F1 = 55.5\%, Kappa = 0.515, ROC-AUC = 0.893 (24.8\% degradering)
+    \item \textbf{Baseline (0 attackers)}: Accuracy = 75.0\%, F1 = 74.3\%, Kappa = 0.722, ROC-AUC = 0.969
+    \item \textbf{1 attacker}: Accuracy = 68.6\%, F1 = 67.5\%, Kappa = 0.650, ROC-AUC = 0.948 (8.5\% degradation)
+    \item \textbf{2 attackers}: Accuracy = 56.4\%, F1 = 55.5\%, Kappa = 0.515, ROC-AUC = 0.893 (24.8\% degradation)
 \end{itemize}
 
 \textbf{Non-IID Data Distribution:}
 \begin{itemize}
-    \item \textbf{Baseline (0 attackerare)}: Accuracy = 74.0\%, F1 = 61.7\%, Kappa = 0.686, ROC-AUC = 0.968
-    \item \textbf{1 attackerare}: Accuracy = 68.2\%, F1 = 52.3\%, Kappa = 0.612, ROC-AUC = 0.933 (7.9\% degradering)
-    \item \textbf{2 attackerare}: Accuracy = 42.4\%, F1 = 38.2\%, Kappa = 0.353, ROC-AUC = 0.869 (42.7\% degradering)
+    \item \textbf{Baseline (0 attackers)}: Accuracy = 74.0\%, F1 = 61.7\%, Kappa = 0.686, ROC-AUC = 0.968
+    \item \textbf{1 attacker}: Accuracy = 68.2\%, F1 = 52.3\%, Kappa = 0.612, ROC-AUC = 0.933 (7.9\% degradation)
+    \item \textbf{2 attackers}: Accuracy = 42.4\%, F1 = 38.2\%, Kappa = 0.353, ROC-AUC = 0.869 (42.7\% degradation)
 \end{itemize}
 
-\textbf{Analys}:
+\textbf{Analysis}:
 \begin{itemize}
-    \item Label flipping-attacken hade signifikant negativ påverkan på modellens prestanda
-    \item Påverkan ökade icke-linjärt med antalet malicious klienter (1 attackerare: \textasciitilde8\% degradering, 2 attackerare: 25-43\% degradering)
-    \item Non-IID data var betydligt mer känsligt för attacken (42.7\% degradering) jämfört med IID data (24.8\% degradering) vid 2 attackerare
-    \item ROC-AUC minskade från 0.969 till 0.869-0.893, vilket indikerar kraftigt försämrad klassseparation
-    \item F1-score drabbades hårdare än accuracy, särskilt för Non-IID data (från 61.7\% till 38.2\%)
+    \item The attack had a big negative impact on performance
+    \item Impact increased non-linearly (1 attacker: \textasciitilde8\% drop, 2 attackers: 25-43\% drop)
+    \item Non-IID data was more vulnerable (42.7\% degradation vs 24.8\% for IID with 2 attackers)
+    \item ROC-AUC dropped from 0.969 to 0.869-0.893, showing degraded class separation
+    \item F1-score dropped more than accuracy, especially for Non-IID (from 61.7\% to 38.2\%)
 \end{itemize}
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{figures/attack_impact_comparison.png}
-\caption{Attack påverkan på FedAvg: Jämförelse mellan IID och Non-IID data. Non-IID data visar betydligt större sårbarhet (42.4\% accuracy med 2 attackerare) jämfört med IID data (56.4\%).}
+\caption{Attack impact on FedAvg: Comparison between IID and Non-IID data. Non-IID data shows significantly greater vulnerability (42.4\% accuracy with 2 attackers) compared to IID data (56.4\%).}
 \label{fig:attack_impact}
 \end{figure}
 
 
-\subsection{Del 2.2: FedProx med attacker}
+\subsection{Part 2.2: FedProx with Attacks}
 
-\subsubsection{Beskrivning av FedProx}
+\subsubsection{Description of FedProx}
 
-FedProx är en variant av FedAvg som hanterar systemheterogenitet bättre genom att lägga till en proximal term i optimeringsmålet. Algoritmen lägger till en regulariseringterm som håller lokala modellvikter nära de globala viktarna:
+FedProx is a variant of FedAvg that handles heterogeneous data better by adding a proximal term. It adds a regularization term that keeps local weights close to the global weights:
 
 \[\min_{w} F(w) + \frac{\mu}{2} \|w - w^t\|^2\]
 
-där $w^t$ är de globala viktarna från föregående runda och $\mu$ är en hyperparameter (vi använde $\mu = 0.1$).
+where $w^t$ are the global weights from the previous round and $\mu$ is a hyperparameter (we used $\mu = 0.1$).
 
-\textbf{Fördelar med FedProx}:
+\textbf{Why use FedProx}:
 \begin{itemize}
-    \item Stabilare konvergens vid heterogen data (Non-IID)
-    \item Mindre känslig för outliers i klientuppdateringar
-    \item Bättre hantering av partial participation (när inte alla klienter deltar)
+    \item More stable convergence with Non-IID data
+    \item Less sensitive to outliers
+    \item Handles partial client participation better
 \end{itemize}
 
-\subsubsection{Experimentella resultat}
+\subsubsection{Experimental Results}
 
-Vi upprepade samma 6 experiment som i Del 2.1 men med FedProx istället för FedAvg:
+We repeated the same 6 experiments as in Part 2.1 but with FedProx instead of FedAvg:
 
 \textbf{IID Data Distribution:}
 \begin{itemize}
-    \item \textbf{Baseline (0 attackerare)}: Accuracy = 74.5\%, F1 = 74.1\%, Kappa = 0.716, ROC-AUC = 0.966
-    \item \textbf{1 attackerare}: Accuracy = 67.3\%, F1 = 66.6\%, Kappa = 0.636, ROC-AUC = 0.947
-    \item \textbf{2 attackerare}: Accuracy = 55.3\%, F1 = 53.7\%, Kappa = 0.503, ROC-AUC = 0.882
+    \item \textbf{Baseline (0 attackers)}: Accuracy = 74.5\%, F1 = 74.1\%, Kappa = 0.716, ROC-AUC = 0.966
+    \item \textbf{1 attacker}: Accuracy = 67.3\%, F1 = 66.6\%, Kappa = 0.636, ROC-AUC = 0.947
+    \item \textbf{2 attackers}: Accuracy = 55.3\%, F1 = 53.7\%, Kappa = 0.503, ROC-AUC = 0.882
 \end{itemize}
 
 \textbf{Non-IID Data Distribution:}
 \begin{itemize}
-    \item \textbf{Baseline (0 attackerare)}: Accuracy = 75.0\%, F1 = 60.9\%, Kappa = 0.695, ROC-AUC = 0.966
-    \item \textbf{1 attackerare}: Accuracy = 71.7\%, F1 = 56.7\%, Kappa = 0.652, ROC-AUC = 0.937
-    \item \textbf{2 attackerare}: Accuracy = 56.2\%, F1 = 42.3\%, Kappa = 0.473, ROC-AUC = 0.880
+    \item \textbf{Baseline (0 attackers)}: Accuracy = 75.0\%, F1 = 60.9\%, Kappa = 0.695, ROC-AUC = 0.966
+    \item \textbf{1 attacker}: Accuracy = 71.7\%, F1 = 56.7\%, Kappa = 0.652, ROC-AUC = 0.937
+    \item \textbf{2 attackers}: Accuracy = 56.2\%, F1 = 42.3\%, Kappa = 0.473, ROC-AUC = 0.880
 \end{itemize}
 
-\textbf{Jämförelse FedAvg vs FedProx}:
+\textbf{Comparison FedAvg vs FedProx}:
 \begin{itemize}
-    \item FedProx visade liknande sårbarhet mot label flipping som FedAvg på IID data (båda \textasciitilde55\% med 2 attackerare)
-    \item På Non-IID data presterade FedProx betydligt bättre under attack: 56.2\% accuracy vs 42.4\% för FedAvg (13.8 procentenheter skillnad)
-    \item FedProx baseline var något högre på Non-IID (75.0\% vs 74.0\%), vilket tyder på bättre hantering av dataheterogenitet
-    \item Proximal regularisering gav viss robusthet mot attacken i Non-IID scenariot men inte i IID-scenariot
-    \item Båda algoritmerna behöver dock explicit försvarsmekanism för effektivt skydd
+    \item FedProx showed similar vulnerability to label flipping as FedAvg on IID data (both \textasciitilde55\% with 2 attackers)
+    \item On Non-IID data, FedProx performed significantly better under attack: 56.2\% accuracy vs 42.4\% for FedAvg (13.8 percentage points difference)
+    \item FedProx baseline was slightly higher on Non-IID (75.0\% vs 74.0\%), suggesting better handling of data heterogeneity
+    \item Proximal regularization provided some robustness against the attack in the Non-IID scenario but not in the IID scenario
+    \item Both algorithms require explicit defense mechanisms for effective protection
 \end{itemize}
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.75\textwidth]{figures/fedavg_vs_fedprox.png}
-\caption{FedAvg vs FedProx robusthet: På Non-IID data med 2 attackerare presterar FedProx betydligt bättre (56.2\% vs 42.4\%), vilket visar att proximal regularisering ger naturlig resistens mot label flipping-attacker.}
+\caption{FedAvg vs FedProx robustness: On Non-IID data with 2 attackers, FedProx performs significantly better (56.2\% vs 42.4\%), showing that proximal regularization provides natural resistance against label flipping attacks.}
 \label{fig:fedavg_vs_fedprox}
 \end{figure}
 
 
-\subsection{Del 2.3: Försvarsmekanism 1 - Loss-Based Anomaly Detection}
+\subsection{Part 2.3: Defense Mechanism 1 - Loss-Based Anomaly Detection}
 
-\subsubsection{Beskrivning av försvarsmetod}
+\subsubsection{Description of Defense Method}
 
-Vi implementerade en \textbf{loss-based anomaly detection} försvarsmekanism som filtrerar bort klienter med misstänkt höga träningsförluster innan aggregering. Rationaliteten är att malicious klienter som tränar på felaktiga labels kommer att ha signifikant högre förlust än ärliga klienter.
+We implemented a \textbf{loss-based filtering} defense that filters out clients with high training losses before aggregation. The idea is that malicious clients training on incorrect labels will have much higher loss than honest clients.
 
-\textbf{Algoritm}:
+\textbf{Algorithm}:
 \begin{enumerate}
-    \item Samla alla klients viktuppdateringar och deras träningsförluster
-    \item Beräkna 75:e percentilen av alla förluster
-    \item Filtrera bort klienter vars förlust överstiger tröskelvärdet
-    \item Aggregera endast de återstående klienternas vikter med FedAvg
+    \item Collect all client weights and their losses
+    \item Calculate 75th percentile of losses as threshold
+    \item Filter out clients with loss above threshold
+    \item Aggregate remaining clients with FedAvg
 \end{enumerate}
 
-Matematiskt:
+Mathematically:
 \[\text{threshold} = P_{75}(\{L_1, L_2, \ldots, L_K\})\]
 \[\text{Accepted} = \{k : L_k \leq \text{threshold}\}\]
 \[w^{t+1} = \frac{1}{|\text{Accepted}|} \sum_{k \in \text{Accepted}} w_k^t\]
 
 \subsubsection{Implementation}
 
-Försvaret implementerades genom att utöka FedAvg-klassen:
+The defense was implemented by extending the FedAvg class:
 \begin{verbatim}
 class FedAvgDefense(FedAvg):
     def aggregate_fit(self, server_round, results, failures):
@@ -289,153 +305,143 @@ class FedAvgDefense(FedAvg):
                                      filtered_results, failures)
 \end{verbatim}
 
-\subsubsection{Experimentella resultat}
+\subsubsection{Experimental Results}
 
-\textbf{IID Data med 1 attackerare}:
+\textbf{IID Data with 1 attacker}:
 \begin{itemize}
-    \item \textbf{Utan försvar}: Accuracy = 68.6\%
-    \item \textbf{Med loss-filter}: Accuracy = 68.5\% (praktiskt taget oförändrat)
-    \item Försvaret var ineffektivt på IID data med endast 1 attackerare
+    \item \textbf{Without defense}: Accuracy = 68.6\%
+    \item \textbf{With loss-filter}: Accuracy = 68.5\% (practically unchanged)
+    \item The defense was ineffective on IID data with only 1 attacker
 \end{itemize}
 
-\textbf{IID Data med 2 attackerare}:
+\textbf{IID Data with 2 attackers}:
 \begin{itemize}
-    \item \textbf{Utan försvar}: Accuracy = 56.4\%
-    \item \textbf{Med loss-filter}: Accuracy = 52.2\% (försämring med 4.2 procentenheter)
-    \item Försvaret var kontraproduktivt och filtrade bort ärliga klienter (false positives)
+    \item \textbf{Without defense}: Accuracy = 56.4\%
+    \item \textbf{With loss-filter}: Accuracy = 52.2\% (degradation of 4.2 percentage points)
+    \item The defense was counterproductive and filtered out honest clients (false positives)
 \end{itemize}
 
-\textbf{Non-IID Data med 1 attackerare}:
+\textbf{Non-IID Data with 1 attacker}:
 \begin{itemize}
-    \item \textbf{Utan försvar}: Accuracy = 68.2\%
-    \item \textbf{Med loss-filter}: Accuracy = 69.6\% (23.9\% återhämtning av förlorad prestanda)
-    \item Försvaret identifierade och exkluderade attackeraren effektivt
+    \item \textbf{Without defense}: Accuracy = 68.2\%
+    \item \textbf{With loss-filter}: Accuracy = 69.6\% (23.9\% recovery of lost performance)
+    \item The defense identified and excluded the attacker effectively
 \end{itemize}
 
-\textbf{Non-IID Data med 2 attackerare}:
+\textbf{Non-IID Data with 2 attackers}:
 \begin{itemize}
-    \item \textbf{Utan försvar}: Accuracy = 42.4\%
-    \item \textbf{Med loss-filter}: Accuracy = 49.9\% (23.7\% återhämtning av förlorad prestanda)
-    \item Försvaret återställde 7.5 procentenheter, vilket är betydande förbättring
+    \item \textbf{Without defense}: Accuracy = 42.4\%
+    \item \textbf{With loss-filter}: Accuracy = 49.9\% (23.7\% recovery of lost performance)
+    \item The defense recovered 7.5 percentage points, a significant improvement
 \end{itemize}
 
-\textbf{Analys}:
+\textbf{Analysis}:
 \begin{itemize}
-    \item Loss-based filtering var \textbf{mycket effektiv på Non-IID data} (23-24\% återhämtning) men \textbf{ineffektiv på IID data}
-    \item På IID data var loss-variationen för liten mellan ärliga och malicious klienter, vilket ledde till false positives
-    \item På Non-IID data hade malicious klienter signifikant högre förluster, vilket gjorde detektion enklare
-    \item Försvaret återställde upp till 7.5 procentenheter accuracy på Non-IID data med 2 attackerare
-    \item Enkel att implementera och kräver ingen modellmodifiering
-    \item 75:e percentil-tröskelvärdet fungerade bra för Non-IID men behöver justeras för IID-scenarion
+    \item Loss-based filtering worked well on Non-IID data (23-24\% recovery) but not on IID data
+    \item On IID data, honest and malicious clients had similar losses, causing false positives
+    \item On Non-IID data, malicious clients had much higher losses, making them easy to detect
+    \item The defense recovered 7.5 percentage points on Non-IID with 2 attackers
+    \item Simple to implement, no model changes needed
+    \item The 75th percentile threshold worked for Non-IID but not IID
 \end{itemize}
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{figures/defense_effectiveness.png}
-\caption{Försvarsmekanism effektivitet: Loss-based filtering visar dramatisk skillnad mellan IID (vänster) och Non-IID (höger) data. På Non-IID data återställer försvaret 7.5 procentenheter accuracy (från 42.4\% till 49.9\%), medan det på IID data är kontraproduktivt.}
+\caption{Defense mechanism effectiveness: Loss-based filtering shows dramatic difference between IID (left) and Non-IID (right) data. On Non-IID data, the defense recovers 7.5 percentage points accuracy (from 42.4\% to 49.9\%), while on IID data it is counterproductive.}
 \label{fig:defense_effectiveness}
 \end{figure}
 
 
-\subsection{Del 2.4: Slutsatser och Rekommendationer}
+\subsection{Part 2.4: Conclusions and Recommendations}
 
-\subsubsection{Sammanfattning av experimentella resultat}
+\subsubsection{Summary of Experimental Results}
 
-Våra experiment visade följande huvudsakliga fynd:
+Our experiments revealed the following main findings:
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{figures/final_accuracy_comparison.png}
-\caption{Översikt av alla experiment: Final accuracy för alla kombinationer av algoritm, datadistribution och antal attackerare. Visar tydligt att Non-IID data är mer sårbart och att försvarsmekanismen endast fungerar effektivt på Non-IID data.}
+\caption{Overview of all experiments: Final accuracy for all combinations of algorithm, data distribution, and number of attackers. Clearly shows that Non-IID data is more vulnerable and that the defense mechanism only works effectively on Non-IID data.}
 \label{fig:final_accuracy}
 \end{figure}
 
 \begin{enumerate}
-    \item \textbf{Label flipping-attackens påverkan}:
+    \item \textbf{Label flipping attack impact}:
     \begin{itemize}
-        \item Attacken hade betydande negativ påverkan på modellprestanda
-        \item Non-IID data var mer sårbart (42.7\% accuracy-degradering vid 2 attackerare) än IID data (24.8\%)
-        \item Påverkan ökade icke-linjärt med antalet attackerare
+        \item The attack had significant negative impact on model performance
+        \item Non-IID data was more vulnerable (42.7\% accuracy degradation with 2 attackers) than IID data (24.8\%)
+        \item Impact increased non-linearly with the number of attackers
     \end{itemize}
     
     \item \textbf{FedProx vs FedAvg}:
     \begin{itemize}
-        \item FedProx visade bättre robusthet på Non-IID data (56.2\% vs 42.4\% vid 2 attackerare)
-        \item På IID data var skillnaden minimal (båda \textasciitilde55-56\%)
-        \item Proximal regularisering gav viss naturlig resistens mot attacken i heterogena scenario
+        \item FedProx showed better robustness on Non-IID data (56.2\% vs 42.4\% with 2 attackers)
+        \item On IID data, the difference was minimal (both \textasciitilde55-56\%)
+        \item Proximal regularization provided some natural resistance against the attack in heterogeneous scenarios
     \end{itemize}
     
-    \item \textbf{Loss-based defense effektivitet}:
+    \item \textbf{Loss-based defense effectiveness}:
     \begin{itemize}
-        \item \textbf{Mycket effektiv på Non-IID data}: 23-24\% återhämtning av förlorad prestanda
-        \item \textbf{Ineffektiv på IID data}: Ingen förbättring eller till och med försämring
-        \item Anledning: På Non-IID data har malicious klienter signifikant högre förluster, vilket gör detektion enklare
-        \item På IID data överlappar loss-distributionen mellan ärliga och malicious klienter
+        \item \textbf{Highly effective on Non-IID data}: 23-24\% recovery of lost performance
+        \item \textbf{Ineffective on IID data}: No improvement or even degradation
+        \item Reason: On Non-IID data, malicious clients have significantly higher losses, making detection easier
+        \item On IID data, the loss distribution overlaps between honest and malicious clients
     \end{itemize}
 \end{enumerate}
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{figures/f1_score_analysis.png}
-\caption{F1-Score analys: Vänster visar att Non-IID data har lägre F1-score än IID data under attack. Höger visar försvarsmekanism påverkan på F1-score för Non-IID data, där försvaret förbättrar klassbalansen.}
+\caption{F1-Score analysis: Left shows that Non-IID data has lower F1-score than IID data under attack. Right shows defense mechanism impact on F1-score for Non-IID data, where the defense improves class balance.}
 \label{fig:f1_analysis}
 \end{figure}
 
-\subsubsection{Rekommendationer för praktisk tillämpning}
+\subsubsection{Limitations and Future Work}
 
-\textbf{För produktionsmiljöer}:
-\begin{enumerate}
-    \item \textbf{Vid Non-IID data}:
-    \begin{itemize}
-        \item Använd FedProx som basalgoritm (bättre naturlig robusthet)
-        \item Implementera loss-based filtering med 75:e percentil-tröskel
-        \item Förvänta 20-25\% återhämtning av prestanda under attack
-    \end{itemize}
-    
-    \item \textbf{Vid IID data}:
-    \begin{itemize}
-        \item FedAvg och FedProx ger liknande resultat
-        \item Loss-based filtering är ej tillräckligt - alternativa metoder behövs
-        \item Överväg coordinate-wise median aggregation eller gradient clipping
-        \item Implementera kompletterande säkerhetsåtgärder (t.ex. multi-Krum, trimmed mean)
-    \end{itemize}
-    
-    \item \textbf{Generella råd}:
-    \begin{itemize}
-        \item Kombinera flera försvarsmekanism för robusthet
-        \item Monitera loss-distributioner kontinuerligt för anomaly detection
-        \item Använd Byzantine-robust aggregering vid misstänkt aktivitet
-        \item Överväg reputationssystem för klienter över tid
-    \end{itemize}
-\end{enumerate}
-
-\subsubsection{Begränsningar och framtida arbete}
-
-\textbf{Begränsningar i vår studie}:
+\textbf{Limitations of our study}:
 \begin{itemize}
-    \item Endast en försvarsmetod implementerad (loss-based filtering)
-    \item Endast label flipping-attack testades (andra attacktyper finns)
-    \item Relativt litet antal klienter (5) - skalbarhet ej testad
-    \item 75:e percentil-tröskelvärdet kan behöva anpassas per scenario
+    \item Only label flipping attack tested (other attack types exist)
+    \item Only one defense method implemented (loss-based filtering)
+    \item The 75th percentile threshold may need adjustment per scenario
 \end{itemize}
 
-\textbf{Framtida arbete}:
+\textbf{Future work}:
 \begin{itemize}
-    \item Implementera och jämföra fler försvarsmetoder (Krum, Trimmed Mean, Median)
-    \item Testa mot sofistikerade attacker (model poisoning, backdoor attacks)
-    \item Utvärdera med större antal klienter och varierande attack-ratio
-    \item Utveckla adaptiva tröskelvärden för loss-based filtering
-    \item Undersöka hybrid-metoder som kombinerar flera försvarsmekanismer
+    \item Implement and compare more defense methods (Krum, Trimmed Mean, Median)
+    \item Test against sophisticated attacks (model poisoning, backdoor attacks)
+    \item Evaluate with larger number of clients and varying attack ratios
+    \item Develop adaptive thresholds for loss-based filtering
+    \item Investigate hybrid methods that combine multiple defense mechanisms
 \end{itemize}
 
 
 \section{Referenser}
 \begin{thebibliography}{9}
 
+\bibitem{flower}
+Beutel, D. J., Topal, T., Mathur, A., Qiu, X., Fernandez-Marques, J., Gao, Y., Sani, L., Li, K. H., Parcollet, T., de Gusmão, P. P. B., \& Lane, N. D. (2020). 
+\textit{Flower: A Friendly Federated Learning Framework}. 
+arXiv preprint arXiv:2007.14390. 
+\url{https://arxiv.org/abs/2007.14390}
+
+\bibitem{fedavg}
+McMahan, H. B., Moore, E., Ramage, D., Hampson, S., \& Arcas, B. A. (2017). 
+\textit{Communication-Efficient Learning of Deep Networks from Decentralized Data}. 
+In Proceedings of the 20th International Conference on Artificial Intelligence and Statistics (AISTATS). 
+\url{https://arxiv.org/abs/1602.05629}
+
+\bibitem{fedprox}
+Li, T., Sahu, A. K., Zaheer, M., Sanjabi, M., Talwalkar, A., \& Smith, V. (2020). 
+\textit{Federated Optimization in Heterogeneous Networks}. 
+Proceedings of Machine Learning and Systems (MLSys). 
+\url{https://arxiv.org/abs/1812.06127}
+
 \bibitem{bim}
 Kurakin, A., Goodfellow, I., \& Bengio, S. (2016). 
 \textit{Adversarial examples in the physical world}. 
-arXiv preprint arXiv:1607.02533.
+arXiv preprint arXiv:1607.02533. 
+\url{https://arxiv.org/abs/1607.02533}
 
 \bibitem{blur}
 Pillow Documentation. 

@@ -1,6 +1,7 @@
-# Mhd Malek Kisanieh
-# Samir Akhalil
-"""flower2025: A Flower / PyTorch app."""
+"""flower2025: A Flower / PyTorch app.
+
+Mhd Malek Kisanieh
+Samir Akhalil"""
 
 import torch
 import torch.nn as nn
@@ -41,10 +42,9 @@ class Net(nn.Module):
         return self.fc2(x)
 
 
-fds = None  # Cache FederatedDataset
-fds_type = None  # Track which type of partitioner is cached
+fds = None
+fds_type = None
 
-# pytorch_transforms = Compose([ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 pytorch_transforms = Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.RandomHorizontalFlip(),
@@ -64,10 +64,9 @@ def apply_transforms(batch):
 
 def load_data(partition_id: int, num_partitions: int, use_iid: bool = True):
     """Load partition CIFAR10 data."""
-    # Only initialize `FederatedDataset` once per partitioner type
     global fds, fds_type
     
-    # Reset cache if switching between IID and non-IID
+    # Reset cache if switching partitioner type
     current_type = "iid" if use_iid else "non_iid"
     if fds is not None and fds_type != current_type:
         fds = None
@@ -77,7 +76,7 @@ def load_data(partition_id: int, num_partitions: int, use_iid: bool = True):
         if use_iid:
             partitioner = IidPartitioner(num_partitions=num_partitions)
         else:
-            # Non-IID: use Dirichlet partitioner with alpha=0.5 (lower alpha = more non-IID)
+            # Non-IID with Dirichlet partitioner (alpha=0.5)
             partitioner = DirichletPartitioner(
                 num_partitions=num_partitions,
                 partition_by="label",
@@ -102,20 +101,9 @@ def load_data(partition_id: int, num_partitions: int, use_iid: bool = True):
 
 def train(net, trainloader, epochs, lr, device, is_attacker=False, attack_type="label_flipping"):
     """Train the model on the training set."""
-    net.to(device)  # move model to GPU if available
+    net.to(device)
     criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
-    # optimizer = torch.optim.Adam(net.parameters(), lr=lr)
-    # optimizer = torch.optim.SGD(
-    #                 net.parameters(),
-    #                 lr=0.01,
-    #                 momentum=0.9,
-    #                 weight_decay=5e-4
-    #             )
-    optimizer = torch.optim.AdamW(
-                net.parameters(),
-                lr=0.001,
-                weight_decay=1e-4
-            )
+    optimizer = torch.optim.AdamW(net.parameters(), lr=0.001, weight_decay=1e-4)
 
 
     net.train()
@@ -125,13 +113,13 @@ def train(net, trainloader, epochs, lr, device, is_attacker=False, attack_type="
             images = batch["img"].to(device)
             labels = batch["label"].to(device)
             
-            # Apply attack if this is an attacker client
+            # Apply label flipping attack if this is an attacker
             if is_attacker:
                 if attack_type == "label_flipping":
-                    # Label flipping attack: flip labels to random classes
+                    # Random label flipping
                     labels = torch.randint(0, 10, labels.shape, device=device)
                 elif attack_type == "targeted_label_flipping":
-                    # Targeted: flip specific classes (e.g., 0->1, 1->0)
+                    # Shift labels by 1
                     labels = (labels + 1) % 10
             
             optimizer.zero_grad()
@@ -159,38 +147,32 @@ def test(net, testloader, device):
             images = batch["img"].to(device)
             labels = batch["label"].to(device)
 
-            outputs = net(images)                     # logits
-            probs = F.softmax(outputs, dim=1)         # probabilities
+            outputs = net(images)
+            probs = F.softmax(outputs, dim=1)
             preds = torch.argmax(outputs, dim=1)
 
-            # Collect metrics
             all_labels.extend(labels.cpu().numpy())
             all_preds.extend(preds.cpu().numpy())
             all_probs.extend(probs.cpu().numpy())
 
-            # Loss & accuracy
             loss += criterion(outputs, labels).item()
             correct += (preds == labels).sum().item()
 
-    # Aggregate metrics
+    # Calculate metrics
     accuracy = correct / len(testloader.dataset)
     avg_loss = loss / len(testloader)
 
-    # Convert to NumPy
     y_true = np.array(all_labels)
     y_pred = np.array(all_preds)
     y_prob = np.array(all_probs)
 
-    # Kappa
     kappa = cohen_kappa_score(y_true, y_pred)
-
-    # F1 (macro)
     f1 = f1_score(y_true, y_pred, average="macro")
 
-    # ROC-AUC (supports multi-class)
+    # ROC-AUC (multi-class)
     try:
         roc = roc_auc_score(y_true, y_prob, multi_class="ovr")
-    except:
-        roc = None  # e.g., only one class present → ROC undefined
+    except ValueError:
+        roc = None
 
     return avg_loss, accuracy, kappa, f1, roc
